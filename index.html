@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fondo FAL — Guía Completa</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0d1e2c;
+    --navy-mid: #163244;
+    --gold: #2ab5a0;
+    --gold-light: #4ecfc0;
+    --cream: #f2f8fa;
+    --text: #1a2a35;
+    --muted: #5a7585;
+    --border: #c5dde6;
+    --red: #b94040;
+    --green: #2d8a6a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Roboto, sans-serif; background: var(--cream); color: var(--text); line-height: 1.7; }
+
+  /* HEADER */
+  header { background: var(--navy); color: white; padding: 60px 40px 50px; position: relative; overflow: hidden; }
+  header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(42,181,160,0.05) 40px, rgba(42,181,160,0.05) 41px); }
+  header .eyebrow { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 16px; }
+  header h1 { font-size: clamp(42px, 7vw, 72px); font-weight: 900; line-height: 1.0; margin-bottom: 14px; position: relative; }
+  header h1 span { color: var(--gold); }
+  header .subtitle { font-size: 16px; color: rgba(255,255,255,0.65); font-style: italic; font-weight: 300; max-width: 600px; }
+  .ley-badge { display: inline-block; background: var(--gold); color: var(--navy); font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 6px 14px; margin-top: 24px; }
+
+  /* TOOLBAR */
+  .toolbar { background: var(--navy-mid); padding: 12px 40px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid rgba(42,181,160,0.25); }
+  .toolbar-left { display: flex; align-items: center; gap: 10px; }
+  .toolbar-right { display: flex; align-items: center; gap: 10px; }
+  .toolbar span.label { font-size: 12px; color: rgba(255,255,255,0.45); letter-spacing: 1px; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; border: none; padding: 9px 18px; font-family: Roboto, sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; border-radius: 3px; }
+  .btn-teal { background: var(--gold); color: var(--navy); }
+  .btn-teal:hover { background: var(--gold-light); }
+  .btn-outline { background: transparent; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); }
+  .btn-outline:hover { background: rgba(255,255,255,0.08); color: white; }
+  .btn-red { background: #b94040; color: white; }
+  .btn-red:hover { background: #d14d4d; }
+  .btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+  #edit-status { display: none; font-size: 11px; letter-spacing: 1px; color: var(--gold); text-transform: uppercase; font-weight: 600; }
+  #last-edit { font-size: 11px; color: rgba(255,255,255,0.35); }
+
+  /* EDIT MODE */
+  main[contenteditable="true"] { outline: none; }
+  main[contenteditable="true"] .section:hover { outline: 2px dashed var(--gold); outline-offset: 8px; }
+  .edit-banner { display: none; background: #fff3cd; border-bottom: 2px solid #f0c040; padding: 10px 40px; font-size: 13px; color: #7a5c00; font-weight: 500; text-align: center; }
+  .edit-banner.visible { display: block; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.visible { display: flex; }
+  .modal { background: white; padding: 36px; width: 360px; border-radius: 4px; }
+  .modal h3 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+  .modal p { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .modal input { width: 100%; border: 1.5px solid var(--border); padding: 10px 14px; font-family: Roboto, sans-serif; font-size: 14px; border-radius: 3px; margin-bottom: 14px; outline: none; }
+  .modal input:focus { border-color: var(--gold); }
+  .modal-error { color: var(--red); font-size: 12px; margin-bottom: 10px; display: none; }
+  .modal-btns { display: flex; gap: 10px; }
+
+  /* LAYOUT */
+  main { max-width: 920px; margin: 0 auto; padding: 50px 30px; }
+  .section { margin-bottom: 52px; page-break-inside: avoid; }
+  .section-label { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .section-label .num { font-size: 13px; font-weight: 700; color: var(--gold); background: var(--navy); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .section-label h2 { font-size: 22px; font-weight: 700; color: var(--navy); border-bottom: 1px solid var(--border); flex: 1; padding-bottom: 8px; }
+  p { margin-bottom: 14px; font-size: 15.5px; font-weight: 300; }
+
+  .highlight { background: var(--navy); color: white; padding: 28px 32px; margin: 28px 0; border-left: 4px solid var(--gold); page-break-inside: avoid; }
+  .highlight p { color: rgba(255,255,255,0.88); margin-bottom: 8px; font-size: 15px; }
+  .highlight p:last-child { margin-bottom: 0; }
+  .highlight strong { color: var(--gold); }
+
+  .info-nuevo { background: #f0f7f4; border: 1px solid #a3c4b5; border-left: 4px solid var(--green); padding: 22px 28px; margin: 24px 0; page-break-inside: avoid; }
+  .info-nuevo::before { content: '+ INFO COMPLEMENTARIA'; display: block; font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--green); font-weight: 600; margin-bottom: 10px; }
+  .info-nuevo p { font-size: 14.5px; color: #1e3a2f; margin-bottom: 8px; }
+  .info-nuevo p:last-child { margin-bottom: 0; }
+
+  .alerta { background: #fdf3f3; border: 1px solid #e8b4b4; border-left: 4px solid var(--red); padding: 20px 26px; margin: 20px 0; page-break-inside: avoid; }
+  .alerta::before { content: '⚠ PUNTO CONTROVERTIDO'; display: block; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--red); font-weight: 600; margin-bottom: 8px; }
+  .alerta p { font-size: 14.5px; color: #5c1f1f; margin-bottom: 0; }
+
+  .grid-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 24px 0; }
+  .dato { background: white; border: 1px solid var(--border); padding: 20px 22px; }
+  .dato .label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 6px; display: block; }
+  .dato .valor { font-size: 26px; font-weight: 700; color: var(--navy); line-height: 1.1; }
+  .dato .valor.gold { color: var(--gold); }
+  .dato .desc { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+
+  .timeline { position: relative; padding-left: 28px; margin: 20px 0; }
+  .timeline::before { content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
+  .tl-item { position: relative; margin-bottom: 22px; page-break-inside: avoid; }
+  .tl-item::before { content: ''; position: absolute; left: -24px; top: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); border: 2px solid var(--navy); }
+  .tl-item .tl-date { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
+  .tl-item p { font-size: 14.5px; margin-bottom: 0; }
+
+  .faq-item { border-bottom: 1px solid var(--border); padding: 18px 0; page-break-inside: avoid; }
+  .faq-q { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+  .faq-a { font-size: 14.5px; font-weight: 300; }
+
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+  th { background: var(--navy); color: white; padding: 10px 16px; text-align: left; font-weight: 600; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  td { padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.5); }
+  tr:last-child td { border-bottom: none; }
+
+  footer { background: var(--navy); color: rgba(255,255,255,0.5); text-align: center; padding: 30px; font-size: 12px; margin-top: 60px; }
+  footer strong { color: var(--gold); }
+  hr.divider { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+
+  @media (max-width: 600px) { header { padding: 40px 24px; } main { padding: 32px 18px; } .grid-datos { grid-template-columns: 1fr 1fr; } .toolbar { padding: 12px 16px; } }
+  @media print { .toolbar, .edit-banner, .modal-overlay { display: none !important; } }
+
+  /* LOADING */
+  #loading { position: fixed; inset: 0; background: var(--cream); display: flex; align-items: center; justify-content: center; z-index: 999; flex-direction: column; gap: 16px; }
+  #loading .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  #loading p { color: var(--muted); font-size: 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p>Cargando contenido...</p>
+</div>
+
+<!-- MODAL CONTRASEÑA -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Modo edición</h3>
+    <p>Ingresá la contraseña para editar el documento.</p>
+    <input type="password" id="passInput" placeholder="Contraseña" onkeydown="if(event.key==='Enter') verificarPass()">
+    <div class="modal-error" id="modalError">Contraseña incorrecta.</div>
+    <div class="modal-btns">
+      <button class="btn btn-teal" onclick="verificarPass()">Ingresar</button>
+      <button class="btn btn-outline" onclick="cerrarModal()" style="color:#333; border-color:#ccc;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="eyebrow">Ley 27.802 · Modernización Laboral · Argentina 2026</div>
+  <h1>Fondo de<br><span>Asistencia</span><br>Laboral</h1>
+  <p class="subtitle">Guía completa sobre el nuevo sistema de capitalización para indemnizaciones laborales</p>
+  <div class="ley-badge">Ley 27.802 — B.O. 06/03/2026</div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <span class="label">Fondos FAL</span>
+    <span id="edit-status">✏ Modo edición activo</span>
+  </div>
+  <div class="toolbar-right">
+    <span id="last-edit"></span>
+    <button class="btn btn-outline" id="btnEditar" onclick="abrirModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Editar
+    </button>
+    <button class="btn btn-teal" id="btnGuardar" onclick="guardarContenido()" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Guardar
+    </button>
+    <button class="btn btn-red" id="btnCancelar" onclick="cancelarEdicion()" style="display:none;">Cancelar</button>
+    <button class="btn btn-teal" id="btnPDF" onclick="descargarPDF()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Descargar PDF
+    </button>
+  </div>
+</div>
+
+<div class="edit-banner" id="editBanner">✏ Estás en modo edición — hacé click en cualquier parte del documento para editar. Guardá los cambios cuando termines.</div>
+
+<main id="contenido">
+
+  <!-- 1. QUÉ ES -->
+  <div class="section">
+    <div class="section-label"><div class="num">1</div><h2>¿Qué es el FAL?</h2></div>
+    <p>El Fondo de Asistencia Laboral (FAL) es un nuevo esquema de capitalización para indemnizaciones, creado por la <strong>Ley 27.802 de Modernización Laboral</strong>, sancionada el 27 de febrero de 2026 y promulgada mediante el <strong>Decreto 137/2026</strong> el 6 de marzo de 2026.</p>
+    <p>Cada empleador debe conformar una <strong>cuenta individual</strong> que constituye un patrimonio separado, independiente, inenajenable e inembargable. Se trata de una cuenta del empleador de carácter común y <em>no individualizable por trabajador</em>. Los fondos se canalizan a través de Fondos Comunes de Inversión (FCI) y los aportes se destinan exclusivamente a cubrir obligaciones por la extinción del vínculo laboral.</p>
+    <div class="highlight">
+      <p><strong>Dato clave:</strong> El FAL <em>no modifica ni sustituye</em> el régimen indemnizatorio. La obligación del empleador de pagar la indemnización equivalente a los años trabajados sigue intacta. El FAL es una herramienta financiera para afrontarla, no una reducción del derecho del trabajador.</p>
+    </div>
+    <div class="info-nuevo">
+      <p><strong>Contexto de la Ley 27.802:</strong> El FAL es parte de una reforma laboral más amplia de 218 artículos en 26 títulos. La misma ley también modifica la base de cálculo del Art. 245 LCT (excluyendo SAC, vacaciones, horas extras y premios no mensuales del cómputo de la indemnización), introduce reglas para el trabajo en plataformas digitales, crea el Registro de Incentivo a la Formalización Laboral (RIFL) y limita los intereses en juicios laborales a IPC + 3% anual.</p>
+    </div>
+  </div>
+
+  <!-- 2. CONTRIBUCIONES -->
+  <div class="section">
+    <div class="section-label"><div class="num">2</div><h2>Contribuciones y costo real para el empleador</h2></div>
+    <p>La contribución mensual es obligatoria y se calcula sobre la <strong>remuneración base del SIPA</strong> (la misma base que se usa para el resto de las cargas sociales). Los porcentajes son:</p>
+    <div class="grid-datos">
+      <div class="dato"><span class="label">Grandes empresas</span><div class="valor">1%</div><div class="desc">mensual sobre masa salarial SIPA</div></div>
+      <div class="dato"><span class="label">PyMEs (MiPyMEs)</span><div class="valor gold">2,5%</div><div class="desc">mensual sobre masa salarial SIPA</div></div>
+      <div class="dato"><span class="label">Máximo por decreto PEN</span><div class="valor">1,5% / 3%</div><div class="desc">previa aprobación Comisión Bicameral</div></div>
+      <div class="dato"><span class="label">Comisión administradora</span><div class="valor gold">1%</div><div class="desc">tope anual (incluye ALyCs y ACDIs)</div></div>
+    </div>
+    <div class="info-nuevo">
+      <p><strong>¿Costo cero para el empleador?</strong> El Art. 77 de la Ley 27.802 establece que los empleadores que participen del régimen FAL tendrán una <strong>reducción equivalente en sus contribuciones patronales a la Seguridad Social (ANSES/SIPA)</strong>. En la práctica, el empleador deja de enviar esa porción al sistema jubilatorio y la deposita en su propia cuenta FAL. No representa un gasto adicional neto.</p>
+      <p>Quedan excluidos de esta reducción quienes estén en el Régimen de Incentivo a la Formalización Laboral (RIFL).</p>
+    </div>
+    <div class="alerta">
+      <p><strong>Impacto en ANSES:</strong> La contracara de este "costo cero" es que la ANSES deja de percibir esos recursos. Especialistas estiman una reducción de entre USD 2.500 y USD 3.000 millones anuales en la recaudación del sistema previsional, equivalente a aproximadamente el 0,4% del PBI. Este es el punto más cuestionado por la oposición.</p>
+    </div>
+    <p>Los pagos al FAL se canalizan a través de la <strong>ARCA</strong> (Agencia de Recaudación y Control Aduanero), que actúa únicamente como agente de derivación, sin asumir responsabilidad alguna por la disponibilidad de los fondos.</p>
+  </div>
+
+  <!-- 3. COBERTURA -->
+  <div class="section">
+    <div class="section-label"><div class="num">3</div><h2>¿Qué cubre y a quién aplica?</h2></div>
+    <p>El FAL cubre las indemnizaciones establecidas en los Arts. 95, 212, 232, 233, 241, 245, 246, 247, 248, 250 y 254 de la LCT N° 20.744, incluyendo:</p>
+    <table>
+      <tr><th>Concepto cubierto</th><th>Detalle</th></tr>
+      <tr><td>Despido sin causa</td><td>Art. 245 LCT (base de cálculo modificada, sin SAC ni vacaciones)</td></tr>
+      <tr><td>Preaviso e integración</td><td>Arts. 232 y 233 LCT</td></tr>
+      <tr><td>Incapacidad</td><td>Art. 212 LCT (2°, 3° y 4° párrafos)</td></tr>
+      <tr><td>Fuerza mayor / quiebra</td><td>Arts. 247 y 254 LCT</td></tr>
+      <tr><td>Fallecimiento</td><td>Art. 248 LCT</td></tr>
+      <tr><td>Mutuo acuerdo</td><td>Art. 241 LCT</td></tr>
+      <tr><td>Contratos a plazo fijo</td><td>Art. 250 LCT</td></tr>
+      <tr><td>Estatutos especiales</td><td>Incluye Régimen de Trabajo Agrario Ley 26.727</td></tr>
+    </table>
+    <p><strong>Requisito clave:</strong> El FAL solo puede cubrir trabajadores <strong>registrados con al menos 12 meses de antigüedad</strong> al momento de la extinción. Bajo ningún concepto cubre trabajo no registrado.</p>
+    <div class="grid-datos">
+      <div class="dato"><span class="label">Excluidos del régimen</span><div class="valor" style="font-size:15px;margin-top:6px;">Sector público</div><div class="desc">Servicio doméstico (Ley 26.844) · Construcción / UOCRA (Ley 22.250)</div></div>
+      <div class="dato"><span class="label">El FAL es obligatorio para</span><div class="valor" style="font-size:15px;margin-top:6px;">Sector privado</div><div class="desc">Todos los empleadores alcanzados por la LCT, incluyendo empleo agrario</div></div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Qué pasa con el fondo de desempleo de la construcción (UOCRA)?</div>
+      <div class="faq-a">Ese régimen sigue funcionando igual. Las empresas alcanzadas por UOCRA/IERIC no migran al FAL.</div>
+    </div>
+  </div>
+
+  <!-- 4. ADMINISTRACIÓN -->
+  <div class="section">
+    <div class="section-label"><div class="num">4</div><h2>Administración e inversiones</h2></div>
+    <p>Las cuentas FAL serán gestionadas por <strong>entidades habilitadas por la CNV</strong> a elección del empleador. Los vehículos previstos son:</p>
+    <ul style="margin:10px 0 16px 20px;font-size:15px;line-height:2;">
+      <li><strong>Fondos Comunes de Inversión (FCI) Abiertos</strong> — administrados por una <em>Sociedad Gerente</em></li>
+      <li><strong>Fideicomisos Financieros (FF)</strong> — administrados por un fiduciario financiero</li>
+    </ul>
+    <p>Entre los posibles administradores: bancos públicos y privados, <strong>sociedades gerentes de FCI</strong>, fiduciarios financieros, fintech y billeteras virtuales. La ley prohíbe expresamente que el empleador elija una entidad en la que tenga <em>participación directa o indirecta</em>.</p>
+    <div class="info-nuevo">
+      <p><strong>¿Cómo llega el dinero a la Sociedad Gerente?</strong> Los aportes, hoy canalizados a través del <em>formulario 931</em>, pasarán a ser derivados automáticamente a la Sociedad Gerente o al fideicomiso que designe el empleador. ARCA actuará como suscriptor de las operaciones por cuenta y orden del cliente.</p>
+      <p><strong>Portabilidad entre fondos:</strong> El empleador podrá cambiar de administrador. Se estudia que las transferencias entre Sociedades Gerentes se realicen <em>en especie</em> (transfiriendo títulos), evitando rescates en efectivo.</p>
+      <p><strong>Diversificación:</strong> Se debate si una empresa podrá aportar a más de un FAL con distintas estrategias de inversión. En principio, no sería posible.</p>
+    </div>
+    <p><strong>Instrumentos de inversión esperados</strong> (de menor a mayor riesgo):</p>
+    <ul style="margin:8px 0 16px 20px;font-size:14.5px;line-height:1.9;">
+      <li><strong>FCI Money Market</strong> — disponibilidad en 24–48 hs, invierte en cauciones y plazos fijos</li>
+      <li><strong>Cauciones bursátiles</strong> — operaciones de corto plazo con garantía de títulos</li>
+      <li><strong>Bonos del Tesoro y gubernamentales</strong> — considerados los de menor riesgo</li>
+      <li><strong>Obligaciones Negociables (ONs)</strong> de alta calidad corporativa</li>
+    </ul>
+    <p>No se prevén restricciones de mínimos, máximos ni categorías, con la única limitación de que sean <em>inversiones dentro del país</em> (quedan excluidos los CEDEARs).</p>
+    <div class="info-nuevo">
+      <p><strong>Volumen estimado del mercado:</strong> El Gobierno proyecta que el FAL inyectará entre <strong>USD 3.000 y USD 5.000 millones anuales</strong> al mercado de capitales. El presidente de la CNV, Roberto Silva, estima que la cantidad de FCI del país pasará de los actuales 1.000 a 10.000.</p>
+    </div>
+    <p>La CNV tiene intención de regular lo mínimo indispensable y crear un régimen de <strong>autorización automática</strong>. No habrá reglamento de gestión tipo, pero las cámaras del sector (CAFCI, CAFIDAP) podrán generar su propio reglamento modelo.</p>
+  </div>
+
+  <!-- 5. USO DE FONDOS -->
+  <div class="section">
+    <div class="section-label"><div class="num">5</div><h2>Uso de los fondos ante una extinción laboral</h2></div>
+    <p>No es obligatorio utilizar los fondos del FAL para pagar indemnizaciones. El empleador tiene la facultad de decidir cómo usar el saldo acumulado. Ante una extinción laboral, puede:</p>
+    <ul style="margin:12px 0 16px 20px;font-size:15px;line-height:2;">
+      <li>Aplicar los recursos del FAL para el pago <strong>total</strong> de la obligación</li>
+      <li>Aplicarlos de forma <strong>parcial</strong> y complementar con fondos propios</li>
+      <li><strong>No usarlos</strong> y pagar la indemnización íntegramente con fondos propios</li>
+    </ul>
+    <p>Si se decide usar el FAL, el empleador debe presentar una <strong>declaración jurada</strong> a la administradora con: nombre, apellido y CUIL del trabajador; datos de su cuenta bancaria; fecha y causa de la extinción; y monto a transferir (total o parcial).</p>
+    <p>La administradora debe transferir las sumas a la cuenta del trabajador en un <strong>máximo de 5 días hábiles</strong>.</p>
+    <div class="highlight">
+      <p><strong>El FAL no es un seguro ilimitado:</strong> Si el fondo acumulado es insuficiente para cubrir la indemnización, el empleador debe abonar la diferencia con fondos propios. La obligación de pago total no desaparece.</p>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Los fondos estarán disponibles para uso inmediato?</div>
+      <div class="faq-a">No. El FAL tiene un período mínimo de permanencia de 6 meses. Las empresas que comiencen a aportar en junio de 2026 no podrán usar el fondo hasta diciembre de 2026.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Qué pasa con el FAL si la empresa quiebra o tiene un embargo?</div>
+      <div class="faq-a">El patrimonio del fondo es inalienable e inembargable. En caso de quiebra o si la empresa pasa 6 meses sin empleados registrados, la cuenta se extingue y el remanente se transfiere al empleador, salvo disposición judicial en contrario.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">¿Tiene ventajas impositivas?</div>
+      <div class="faq-a">Sí. Los resultados de la inversión de las contribuciones están exentos del Impuesto a las Ganancias y del IVA.</div>
+    </div>
+  </div>
+
+  <!-- 6. SUSPENSIÓN -->
+  <div class="section">
+    <div class="section-label"><div class="num">6</div><h2>Suspensión de aportes y composición del fondo</h2></div>
+    <p>El empleador podrá solicitar la <strong>interrupción o suspensión</strong> de los aportes mensuales cuando el fondo acumulado cubra las posibles contingencias laborales de su nómina, según los porcentajes que determine la reglamentación.</p>
+    <p>Además de los aportes obligatorios, las empresas podrán realizar <strong>contribuciones adicionales voluntarias</strong>, fortaleciendo la cobertura frente a futuras indemnizaciones. También puede recibir donaciones e ingresos derivados de inversiones.</p>
+  </div>
+
+  <!-- 7. LIQUIDEZ -->
+  <div class="section">
+    <div class="section-label"><div class="num">7</div><h2>Liquidez mínima y gastos</h2></div>
+    <p>Se está discutiendo la necesidad de mantener una <strong>liquidez mínima</strong> en el fondo para hacer frente a pagos a empleados en el plazo exigido por la regulación laboral (5 días hábiles desde la presentación de la DDJJ).</p>
+    <p>Respecto a los gastos: en principio, los gastos operativos del FAL quedan <em>por fuera</em> del tope del 1% de comisiones.</p>
+  </div>
+
+  <!-- 8. CRONOGRAMA -->
+  <div class="section">
+    <div class="section-label"><div class="num">8</div><h2>Cronograma y estado de la reglamentación</h2></div>
+    <div class="alerta">
+      <p><strong>⚖ Suspensión judicial (abril 2026):</strong> Un juez federal (Raúl Horacio Ojeda) suspendió <strong>83 artículos de la Ley 27.802</strong>, lo que afecta directamente la implementación del FAL. El Gobierno apeló la medida y el proceso de reglamentación continúa, pero la incertidumbre judicial genera preocupación en el sector empresarial y en los mercados.</p>
+    </div>
+    <div class="timeline">
+      <div class="tl-item"><div class="tl-date">27 Feb 2026</div><p>El Congreso sanciona la Ley 27.802 de Modernización Laboral.</p></div>
+      <div class="tl-item"><div class="tl-date">06 Mar 2026</div><p>Promulgada mediante Decreto 137/2026 y publicada en el Boletín Oficial.</p></div>
+      <div class="tl-item"><div class="tl-date">1 Jun 2026 (fecha prevista)</div><p>Fecha de inicio del régimen FAL según la Ley. El PEN puede prorrogarlo por hasta 6 meses adicionales.</p></div>
+      <div class="tl-item"><div class="tl-date">1 Dic 2026 (estimado)</div><p>Fecha estimada real de lanzamiento, dado que la reglamentación se haría en etapas.</p></div>
+      <div class="tl-item"><div class="tl-date">1 Ene 2027</div><p>Entran en vigencia los cambios en contribuciones patronales vinculados a obras sociales.</p></div>
+    </div>
+    <div class="info-nuevo">
+      <p><strong>Estado actual (abril 2026):</strong> Queda pendiente el decreto reglamentario del PEN, para que luego puedan emitirse resoluciones del Ministerio de Economía, Secretaría de Trabajo, ARCA y CNV. No habrá reglamento de gestión tipo ni prospecto de oferta pública.</p>
+      <p><strong>Principales dudas pendientes:</strong> cómo se aplicará la reducción de cargas patronales en el formulario de ARCA, y el mecanismo exacto para transferencias entre fondos (portabilidad).</p>
+    </div>
+  </div>
+
+  <!-- 9. MERCADO DE CAPITALES -->
+  <div class="section">
+    <div class="section-label"><div class="num">9</div><h2>Impacto en el mercado de capitales y crédito hipotecario</h2></div>
+    <p>Más allá de su función indemnizatoria, el FAL tiene un efecto colateral de gran escala: <strong>transforma un pasivo laboral en un activo financiero</strong>. El dinero que antes permanecía fuera del sistema hasta el momento del despido ahora "trabaja" generando rendimientos dentro del mercado de capitales.</p>
+    <div class="highlight">
+      <p><strong>El círculo virtuoso del FAL:</strong></p>
+      <p>① PyMEs y empresas con <strong>menor riesgo al contratar y despedir</strong> → más empleo formal registrado</p>
+      <p>② Flujo constante de USD 2.500–3.000 M anuales genera un <strong>mercado de capitales más profundo y líquido</strong></p>
+      <p>③ Mayor liquidez del mercado → <strong>tasas más bajas</strong> en el sistema financiero</p>
+      <p>④ Tasas más bajas → <strong>mayor acceso a créditos hipotecarios</strong> para familias</p>
+    </div>
+    <div class="info-nuevo">
+      <p><strong>Vínculo con el crédito hipotecario:</strong> La CNV aún debe definir la composición final de los instrumentos elegibles, pero el espíritu de la ley orienta estos fondos hacia el mercado de capitales, abriendo la puerta para instrumentos vinculados al financiamiento de vivienda.</p>
+      <p>El ministro Luis Caputo: "Esta es plata que como empresa tenían que pagarle al Gobierno. Ahora les decimos que constituyan un fondo de reserva. Si no hay despidos, igual hay un beneficio: el desarrollo del mercado de capitales."</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- RESUMEN -->
+  <div class="section">
+    <div class="section-label"><div class="num">✓</div><h2>Resumen ejecutivo</h2></div>
+    <table>
+      <tr><th>Aspecto</th><th>Dato</th></tr>
+      <tr><td>Ley</td><td>27.802 — promulgada Decreto 137/2026</td></tr>
+      <tr><td>Publicación BO</td><td>6 de marzo de 2026</td></tr>
+      <tr><td>Vigencia FAL</td><td>1 de junio de 2026 (prorrogable 6 meses)</td></tr>
+      <tr><td>Aporte grandes empresas</td><td>1% mensual sobre masa salarial SIPA</td></tr>
+      <tr><td>Aporte PyMEs</td><td>2,5% mensual sobre masa salarial SIPA</td></tr>
+      <tr><td>Costo neto empleador</td><td>Cero (se descuenta de contribuciones a ANSES)</td></tr>
+      <tr><td>Comisión administradora</td><td>Hasta 1% anual (tope incluye ALyCs)</td></tr>
+      <tr><td>Período mínimo permanencia</td><td>6 meses</td></tr>
+      <tr><td>Antigüedad mínima trabajador</td><td>12 meses para ser cubierto</td></tr>
+      <tr><td>Plazo transferencia al trabajador</td><td>5 días hábiles</td></tr>
+      <tr><td>Exenciones impositivas</td><td>Ganancias e IVA sobre rendimientos</td></tr>
+      <tr><td>Excluidos</td><td>Sector público, servicio doméstico, construcción (UOCRA)</td></tr>
+      <tr><td>Supervisor</td><td>CNV + Ministerio de Economía + Secretaría de Trabajo</td></tr>
+      <tr><td>Canal de pagos</td><td>ARCA (solo como agente de derivación)</td></tr>
+    </table>
+  </div>
+
+</main>
+
+<footer>
+  Documento generado con datos del <strong>Boletín Oficial (06/03/2026)</strong>, Ley 27.802, y fuentes: La Nación, Infobae, iProfesional, Ámbito · Abril 2026
+</footer>
+
+<!-- FIREBASE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD2wRzJ7rnZAhxNpJFOxKFFIU1lDHIfpAI",
+    authDomain: "fondos-fal.firebaseapp.com",
+    projectId: "fondos-fal",
+    storageBucket: "fondos-fal.firebasestorage.app",
+    messagingSenderId: "885935316784",
+    appId: "1:885935316784:web:9dd20010e037348af2f2f5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const PASS = "fal2026";
+  const contenidoEl = document.getElementById("contenido");
+  const loading = document.getElementById("loading");
+  const lastEdit = document.getElementById("last-edit");
+  let htmlOriginal = "";
+
+  // ── CARGAR DESDE FIRESTORE ──────────────────────────
+  async function cargarContenido() {
+    try {
+      const ref = doc(db, "fal", "pagina");
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        contenidoEl.innerHTML = data.html;
+        if (data.editado_por && data.ultima_edicion) {
+          const fecha = data.ultima_edicion.toDate();
+          const fmt = fecha.toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit" });
+          lastEdit.textContent = `Última edición: ${data.editado_por} — ${fmt}`;
+        }
+      } else {
+        // Primera vez: guardar contenido default
+        await setDoc(ref, { html: contenidoEl.innerHTML, editado_por: "Sistema", ultima_edicion: serverTimestamp() });
+      }
+    } catch(e) {
+      console.error("Error cargando Firestore:", e);
+    } finally {
+      loading.style.display = "none";
+    }
+  }
+
+  cargarContenido();
+
+  // ── EDICIÓN ─────────────────────────────────────────
+  window.abrirModal = () => {
+    document.getElementById("modalOverlay").classList.add("visible");
+    setTimeout(() => document.getElementById("passInput").focus(), 100);
+  };
+
+  window.cerrarModal = () => {
+    document.getElementById("modalOverlay").classList.remove("visible");
+    document.getElementById("passInput").value = "";
+    document.getElementById("modalError").style.display = "none";
+  };
+
+  window.verificarPass = () => {
+    const val = document.getElementById("passInput").value;
+    if (val === PASS) {
+      cerrarModal();
+      activarEdicion();
+    } else {
+      document.getElementById("modalError").style.display = "block";
+    }
+  };
+
+  function activarEdicion() {
+    htmlOriginal = contenidoEl.innerHTML;
+    contenidoEl.setAttribute("contenteditable", "true");
+    document.getElementById("btnEditar").style.display = "none";
+    document.getElementById("btnPDF").style.display = "none";
+    document.getElementById("btnGuardar").style.display = "flex";
+    document.getElementById("btnCancelar").style.display = "flex";
+    document.getElementById("edit-status").style.display = "inline";
+    document.getElementById("editBanner").classList.add("visible");
+  }
+
+  window.cancelarEdicion = () => {
+    contenidoEl.innerHTML = htmlOriginal;
+    contenidoEl.removeAttribute("contenteditable");
+    document.getElementById("btnEditar").style.display = "flex";
+    document.getElementById("btnPDF").style.display = "flex";
+    document.getElementById("btnGuardar").style.display = "none";
+    document.getElementById("btnCancelar").style.display = "none";
+    document.getElementById("edit-status").style.display = "none";
+    document.getElementById("editBanner").classList.remove("visible");
+  };
+
+  window.guardarContenido = async () => {
+    const btn = document.getElementById("btnGuardar");
+    btn.textContent = "Guardando...";
+    btn.style.opacity = "0.6";
+    const nombre = prompt("Tu nombre (para el historial):", "") || "Anónimo";
+    try {
+      const ref = doc(db, "fal", "pagina");
+      await setDoc(ref, { html: contenidoEl.innerHTML, editado_por: nombre, ultima_edicion: serverTimestamp() });
+      contenidoEl.removeAttribute("contenteditable");
+      document.getElementById("btnEditar").style.display = "flex";
+      document.getElementById("btnPDF").style.display = "flex";
+      document.getElementById("btnGuardar").style.display = "none";
+      document.getElementById("btnCancelar").style.display = "none";
+      document.getElementById("edit-status").style.display = "none";
+      document.getElementById("editBanner").classList.remove("visible");
+      const ahora = new Date();
+      const fmt = ahora.toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit" });
+      lastEdit.textContent = `Última edición: ${nombre} — ${fmt}`;
+      alert("✅ Cambios guardados. Todos los usuarios verán la nueva versión.");
+    } catch(e) {
+      alert("❌ Error al guardar. Revisá tu conexión.");
+      console.error(e);
+    } finally {
+      btn.textContent = "Guardar";
+      btn.style.opacity = "1";
+    }
+  };
+
+  // ── PDF ─────────────────────────────────────────────
+  window.descargarPDF = () => {
+    const btn = document.getElementById("btnPDF");
+    btn.style.opacity = "0.6";
+    btn.textContent = "Generando...";
+    const toolbar = document.querySelector(".toolbar");
+    const banner = document.getElementById("editBanner");
+    toolbar.style.display = "none";
+    banner.style.display = "none";
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+    s.onload = () => {
+      html2pdf().set({
+        margin: 0, filename: "Fondo_FAL_Guia_Completa.pdf",
+        image: { type:"jpeg", quality:0.97 },
+        html2canvas: { scale:2, useCORS:true, scrollY:0, width:794, windowWidth:794 },
+        jsPDF: { unit:"pt", format:"a4", orientation:"portrait" },
+        pagebreak: { mode:"none" }
+      }).from(document.body).save().then(() => {
+        toolbar.style.display = "flex";
+        btn.style.opacity = "1";
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar PDF';
+      });
+    };
+    document.head.appendChild(s);
+  };
+</script>
+
+</body>
+</html>
