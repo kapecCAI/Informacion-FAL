@@ -113,7 +113,46 @@
   footer strong { color: var(--gold); }
   hr.divider { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
 
-  /* BIBLIOGRAFÍA */
+  /* PARAKEET BADGE */
+  .parakeet-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1.5px solid var(--gold);
+    padding: 6px 14px 6px 8px;
+    margin-top: 20px;
+    text-decoration: none;
+    transition: background 0.2s;
+    position: relative;
+  }
+  .parakeet-badge:hover { background: rgba(42,181,160,0.08); }
+  .parakeet-badge .pk-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); display: block; line-height: 1; margin-bottom: 2px; }
+  .parakeet-badge .pk-name { font-size: 13px; font-weight: 700; color: var(--navy); letter-spacing: 0.5px; }
+
+  /* PARAKEET CARD */
+  .parakeet-card {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-left: 4px solid var(--gold);
+    padding: 20px 24px;
+    margin: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .parakeet-card .pk-info { flex: 1; min-width: 200px; }
+  .parakeet-card .pk-info p { font-size: 13.5px; margin-bottom: 0; color: var(--muted); }
+  .parakeet-card a.pk-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--gold); color: var(--navy);
+    padding: 9px 18px; font-size: 13px; font-weight: 700;
+    text-decoration: none; letter-spacing: 0.3px; white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .parakeet-card a.pk-link:hover { background: var(--gold-light); }
+  .parakeet-card a.pk-link svg { width: 13px; height: 13px; }
   .biblio-list { list-style: none; counter-reset: none; margin: 0; padding: 0; }
   .biblio-list li { padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; line-height: 1.6; color: var(--text); }
   .biblio-list li:last-child { border-bottom: none; }
@@ -273,6 +312,24 @@
       <p><strong>Volumen estimado del mercado:</strong> El Gobierno proyecta que el FAL inyectará entre <strong>USD 3.000 y USD 5.000 millones anuales</strong> al mercado de capitales. El presidente de la CNV, Roberto Silva, estima que la cantidad de FCI del país pasará de los actuales 1.000 a 10.000.</p>
     </div>
     <p>La CNV tiene intención de regular lo mínimo indispensable y crear un régimen de <strong>autorización automática</strong>. No habrá reglamento de gestión tipo, pero las cámaras del sector (CAFCI, CAFIDAP) podrán generar su propio reglamento modelo.</p>
+
+    <div class="parakeet-card">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="44" height="44" rx="6" fill="#0d1e2c"/>
+        <path d="M12 32C12 32 15 22 21 19C27 16 31 19 31 19C31 19 27 21 24 25C21 29 22 34 22 34" stroke="#2ab5a0" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="27" cy="14" r="3.5" fill="#2ab5a0"/>
+        <path d="M9 34C12 31 16 30 19 30" stroke="#2ab5a0" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <div class="pk-info">
+        <strong style="font-size:15px;color:var(--navy);display:block;margin-bottom:4px;">Parakeet Fondos</strong>
+        <p>Sociedad Gerente de FCI habilitada por la CNV. Ofrece fondos de Renta Fija PyME, Mercado Dinero, Renta Variable y más — todos potenciales vehículos para el FAL.</p>
+      </div>
+      <a href="https://www.parakeetfondos.com/" target="_blank" class="pk-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Ver fondos
+      </a>
+    </div>
+
   </div>
 
   <!-- 5. USO DE FONDOS -->
@@ -558,26 +615,130 @@
     const btn = document.getElementById("btnPDF");
     btn.style.opacity = "0.6";
     btn.textContent = "Generando...";
+
     const toolbar = document.querySelector(".toolbar");
     const banner = document.getElementById("editBanner");
     toolbar.style.display = "none";
     banner.style.display = "none";
-    const s = document.createElement("script");
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-    s.onload = () => {
-      html2pdf().set({
-        margin: 0, filename: "Fondo_FAL_Guia_Completa.pdf",
-        image: { type:"jpeg", quality:0.97 },
-        html2canvas: { scale:2, useCORS:true, scrollY:0, width:794, windowWidth:794 },
-        jsPDF: { unit:"pt", format:"a4", orientation:"portrait" },
-        pagebreak: { mode:"none" }
-      }).from(document.body).save().then(() => {
-        toolbar.style.display = "flex";
-        btn.style.opacity = "1";
-        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar PDF';
-      });
-    };
-    document.head.appendChild(s);
+
+    const loadScript = (src) => new Promise(res => {
+      const s = document.createElement("script");
+      s.src = src; s.onload = res;
+      document.head.appendChild(s);
+    });
+
+    Promise.all([
+      loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
+      loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
+    ]).then(() => {
+      setTimeout(() => {
+        // Renderizar al ancho del contenido principal (920px) para que llene el A4
+        const renderW = 960;
+        html2canvas(document.body, {
+          scale: 2,
+          useCORS: true,
+          scrollY: 0, scrollX: 0,
+          backgroundColor: "#f2f8fa",
+          logging: false,
+          width: renderW,
+          windowWidth: renderW
+        }).then(canvas => {
+          const { jsPDF } = window.jspdf;
+          const ctx = canvas.getContext("2d");
+          const bgR = 242, bgG = 248, bgB = 250;
+
+          // 1. Recortar espacio en blanco al final
+          let lastRow = canvas.height - 1;
+          for (let y = canvas.height - 1; y >= 0; y--) {
+            const row = ctx.getImageData(0, y, canvas.width, 1).data;
+            let hasContent = false;
+            for (let x = 0; x < canvas.width * 4; x += 16) {
+              if (Math.abs(row[x]-bgR)>15||Math.abs(row[x+1]-bgG)>15||Math.abs(row[x+2]-bgB)>15) {
+                hasContent = true; break;
+              }
+            }
+            if (hasContent) { lastRow = Math.min(y + 60, canvas.height); break; }
+          }
+
+          const trimmed = document.createElement("canvas");
+          trimmed.width = canvas.width;
+          trimmed.height = lastRow;
+          trimmed.getContext("2d").drawImage(canvas, 0, 0);
+          const tCtx = trimmed.getContext("2d");
+
+          // 2. Dimensiones A4
+          const a4W = 595.28, a4H = 841.89;
+          const scale = trimmed.width / a4W;
+          const gap_pt = 18;                          // espacio blanco entre páginas (pt)
+          const gap_px = Math.round(gap_pt * scale);   // en px del canvas
+          const pageH_px = Math.floor((a4H - gap_pt * 2) * scale); // altura útil por página
+          const totalH = trimmed.height;
+
+          // 3. Corte inteligente: busca fila vacía cerca del límite
+          function findSafeCut(idealY) {
+            if (idealY >= totalH) return totalH;
+            const range = 140;
+            const startY = Math.max(0, idealY - range);
+            const h = Math.min(range * 2, totalH - startY);
+            const pixels = tCtx.getImageData(0, startY, trimmed.width, h);
+            const data = pixels.data;
+            // Busca hacia arriba desde el punto ideal
+            for (let dy = 0; dy < range; dy++) {
+              for (const dir of [-1, 1]) {
+                const row = (range + dy * dir);
+                if (row < 0 || row >= h) continue;
+                let empty = true;
+                for (let x = 0; x < Math.min(trimmed.width, 400); x += 10) {
+                  const i = (row * trimmed.width + x) * 4;
+                  if (Math.abs(data[i]-bgR)>12||Math.abs(data[i+1]-bgG)>12||Math.abs(data[i+2]-bgB)>12) {
+                    empty = false; break;
+                  }
+                }
+                if (empty) return startY + row;
+              }
+            }
+            return idealY;
+          }
+
+          // 4. Generar páginas con margen superior/inferior
+          const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
+          let yPos = 0, pageNum = 0;
+
+          while (yPos < totalH) {
+            const cutY = findSafeCut(yPos + pageH_px);
+            const sliceH = cutY - yPos;
+            if (sliceH <= 0) break;
+
+            // Canvas de la página con márgenes arriba y abajo
+            const pageCanvas = document.createElement("canvas");
+            pageCanvas.width = trimmed.width;
+            pageCanvas.height = sliceH + gap_px * 2;
+            const pCtx = pageCanvas.getContext("2d");
+
+            // Fondo blanco cremoso
+            pCtx.fillStyle = "#f2f8fa";
+            pCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+            // Contenido centrado con margen
+            pCtx.drawImage(trimmed, 0, yPos, trimmed.width, sliceH, 0, gap_px, trimmed.width, sliceH);
+
+            const img = pageCanvas.toDataURL("image/jpeg", 0.94);
+            const pageH_pt = (pageCanvas.height / trimmed.width) * a4W;
+
+            if (pageNum > 0) pdf.addPage("a4");
+            pdf.addImage(img, "JPEG", 0, 0, a4W, Math.min(pageH_pt, a4H));
+
+            yPos = cutY;
+            pageNum++;
+          }
+
+          pdf.save("Fondo_FAL_Guia_Completa.pdf");
+          toolbar.style.display = "flex";
+          btn.style.opacity = "1";
+          btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar PDF';
+        });
+      }, 400);
+    });
   };
 </script>
 
