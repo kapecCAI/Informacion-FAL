@@ -654,24 +654,30 @@
           const pageH_px = Math.floor((a4H - gap_pt * 2) * sc);
           const totalH = trimmed.height;
 
-          // 4. Smart cut - find empty cream row near ideal cut point
-          // Also avoid cutting inside the navy footer (dark rows)
-          function isEmptyRow(y) {
-            if (y < 0 || y >= totalH) return false;
-            const row = tCtx.getImageData(0, y, trimmed.width, 1).data;
-            for (let x = 0; x < Math.min(trimmed.width, 500); x += 10) {
-              const i = x * 4;
-              if (Math.abs(row[i]-bgR)>10||Math.abs(row[i+1]-bgG)>10||Math.abs(row[i+2]-bgB)>10) return false;
+          // 4. Smart cut - find a ZONE (5px band) of empty cream rows near ideal cut
+          function isZoneEmpty(y, bandPx) {
+            for (let dy = 0; dy < bandPx; dy++) {
+              const row = y + dy;
+              if (row < 0 || row >= totalH) continue;
+              const data = tCtx.getImageData(0, row, Math.min(trimmed.width, 600), 1).data;
+              for (let x = 0; x < data.length; x += 12) {
+                if (Math.abs(data[x]-bgR)>8||Math.abs(data[x+1]-bgG)>8||Math.abs(data[x+2]-bgB)>8) return false;
+              }
             }
             return true;
           }
 
           function findSafeCut(idealY) {
             if (idealY >= totalH) return totalH;
-            // Search ±180px around idealY
-            for (let dy = 0; dy < 180; dy++) {
-              if (isEmptyRow(idealY - dy)) return idealY - dy;
-              if (isEmptyRow(idealY + dy)) return idealY + dy;
+            // Search ±200px around idealY for a 5px empty band
+            for (let dy = 0; dy < 200; dy++) {
+              if (isZoneEmpty(idealY - dy, 5)) return idealY - dy;
+              if (isZoneEmpty(idealY + dy, 5)) return idealY + dy;
+            }
+            // Fallback: single row
+            for (let dy = 0; dy < 200; dy++) {
+              if (isZoneEmpty(idealY - dy, 1)) return idealY - dy;
+              if (isZoneEmpty(idealY + dy, 1)) return idealY + dy;
             }
             return idealY;
           }
@@ -682,7 +688,15 @@
 
           while (yPos < totalH) {
             const rawCut = yPos + pageH_px;
-            const cutY = Math.min(findSafeCut(rawCut), totalH);
+            let cutY = Math.min(findSafeCut(rawCut), totalH);
+
+            // If remaining content after cutY is very small (< 15% of a page),
+            // include it in the current page to avoid orphaned last page
+            const remaining = totalH - cutY;
+            if (remaining > 0 && remaining < pageH_px * 0.25) {
+              cutY = totalH;
+            }
+
             const sliceH = cutY - yPos;
             if (sliceH <= 0) break;
 
@@ -696,11 +710,17 @@
 
             const img = pageCanvas.toDataURL("image/jpeg", 0.95);
             const sliceH_pt = (sliceH / trimmed.width) * a4W;
+            const pageH_pt = sliceH_pt + gap_pt * 2;
 
-            if (pageNum > 0) pdf.addPage("a4");
-            // Fit slice height precisely, don't force A4 height so no blank space at bottom of last page
-            const renderedH = Math.min((pageCanvas.height / trimmed.width) * a4W, a4H);
-            pdf.addImage(img, "JPEG", 0, 0, a4W, renderedH);
+            if (pageNum > 0) {
+              // Last page or short page: custom height so no blank space
+              if (cutY >= totalH || pageH_pt < a4H * 0.85) {
+                pdf.addPage([a4W, pageH_pt]);
+              } else {
+                pdf.addPage("a4");
+              }
+            }
+            pdf.addImage(img, "JPEG", 0, 0, a4W, Math.min(pageH_pt, cutY >= totalH ? pageH_pt : a4H));
 
             yPos = cutY;
             pageNum++;
