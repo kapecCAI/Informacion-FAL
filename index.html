@@ -619,24 +619,24 @@
           scale: 2, useCORS: true,
           scrollY: 0, scrollX: 0,
           backgroundColor: "#f2f8fa",
-          logging: false, width: 960, windowWidth: 960
+          logging: false, width: 1000, windowWidth: 1000
         }).then(canvas => {
           const { jsPDF } = window.jspdf;
           const ctx = canvas.getContext("2d");
           // cream background color
           const bgR = 242, bgG = 248, bgB = 250;
 
-          // 1. Find last row with any non-cream pixel (includes dark navy footer)
+          // 1. Find last row with any non-cream pixel — scan every pixel, not every 12th
           let lastRow = canvas.height - 1;
           for (let y = canvas.height - 1; y >= 0; y--) {
             const row = ctx.getImageData(0, y, canvas.width, 1).data;
             let hasContent = false;
-            for (let x = 0; x < canvas.width * 4; x += 12) {
-              if (Math.abs(row[x]-bgR)>8 || Math.abs(row[x+1]-bgG)>8 || Math.abs(row[x+2]-bgB)>8) {
+            for (let x = 0; x < canvas.width * 4; x += 4) {
+              if (Math.abs(row[x]-bgR)>6 || Math.abs(row[x+1]-bgG)>6 || Math.abs(row[x+2]-bgB)>6) {
                 hasContent = true; break;
               }
             }
-            if (hasContent) { lastRow = Math.min(y + 20, canvas.height); break; }
+            if (hasContent) { lastRow = Math.min(y + 4, canvas.height); break; }
           }
 
           // 2. Trimmed canvas
@@ -649,57 +649,72 @@
           // 3. A4 page setup
           const a4W = 595.28, a4H = 841.89;
           const sc = trimmed.width / a4W;
-          const gap_pt = 12;
+          const gap_pt = 10;
           const gap_px = Math.round(gap_pt * sc);
           const pageH_px = Math.floor((a4H - gap_pt * 2) * sc);
           const totalH = trimmed.height;
 
-          // 4. Smart cut - find a ZONE (5px band) of empty cream rows near ideal cut
-          function isZoneEmpty(y, bandPx) {
-            for (let dy = 0; dy < bandPx; dy++) {
-              const row = y + dy;
-              if (row < 0 || row >= totalH) continue;
-              const data = tCtx.getImageData(0, row, Math.min(trimmed.width, 600), 1).data;
-              for (let x = 0; x < data.length; x += 12) {
-                if (Math.abs(data[x]-bgR)>8||Math.abs(data[x+1]-bgG)>8||Math.abs(data[x+2]-bgB)>8) return false;
+          // 4. Check if a band of rows is all cream (empty space)
+          function isBandEmpty(startY, bandH) {
+            for (let y = startY; y < startY + bandH && y < totalH; y++) {
+              const d = tCtx.getImageData(0, y, trimmed.width, 1).data;
+              for (let x = 0; x < d.length; x += 4) {
+                if (Math.abs(d[x]-bgR)>6 || Math.abs(d[x+1]-bgG)>6 || Math.abs(d[x+2]-bgB)>6) return false;
               }
             }
             return true;
           }
 
+          // Find best cut — prefer LARGE empty zones (section breaks: 30px+)
+          // This avoids cutting within paragraph line-spacing (which is ~4-8px)
           function findSafeCut(idealY) {
             if (idealY >= totalH) return totalH;
-            // Search ±200px around idealY for a 5px empty band
-            for (let dy = 0; dy < 200; dy++) {
-              if (isZoneEmpty(idealY - dy, 5)) return idealY - dy;
-              if (isZoneEmpty(idealY + dy, 5)) return idealY + dy;
+            const range = 300;
+            // First pass: look for 30px+ empty bands (major section breaks)
+            for (let dy = 0; dy < range; dy++) {
+              if (isBandEmpty(idealY - dy, 30)) return idealY - dy;
+              if (isBandEmpty(idealY + dy, 30)) return idealY + dy;
             }
-            // Fallback: single row
-            for (let dy = 0; dy < 200; dy++) {
-              if (isZoneEmpty(idealY - dy, 1)) return idealY - dy;
-              if (isZoneEmpty(idealY + dy, 1)) return idealY + dy;
+            // Second pass: 15px bands (between sub-sections)
+            for (let dy = 0; dy < range; dy++) {
+              if (isBandEmpty(idealY - dy, 15)) return idealY - dy;
+              if (isBandEmpty(idealY + dy, 15)) return idealY + dy;
+            }
+            // Third pass: 8px bands (between paragraphs)
+            for (let dy = 0; dy < range; dy++) {
+              if (isBandEmpty(idealY - dy, 8)) return idealY - dy;
+              if (isBandEmpty(idealY + dy, 8)) return idealY + dy;
+            }
+            // Fallback: any empty row
+            for (let dy = 0; dy < range; dy++) {
+              if (isBandEmpty(idealY - dy, 1)) return idealY - dy;
             }
             return idealY;
           }
 
-          // 5. Build PDF pages
+          // 5. Build PDF pages with anti-orphan logic
           const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
           let yPos = 0, pageNum = 0;
+          const minOrphan = pageH_px * 0.42; // min content on a page (42% of A4 height)
 
           while (yPos < totalH) {
-            const rawCut = yPos + pageH_px;
-            let cutY = Math.min(findSafeCut(rawCut), totalH);
+            let cutY = Math.min(findSafeCut(yPos + pageH_px), totalH);
 
-            // If remaining content after cutY is very small (< 15% of a page),
-            // include it in the current page to avoid orphaned last page
+            // Anti-orphan: if what remains is tiny, absorb it OR cut earlier
             const remaining = totalH - cutY;
-            if (remaining > 0 && remaining < pageH_px * 0.25) {
-              cutY = totalH;
+            if (remaining > 0 && remaining < minOrphan) {
+              const earlierCut = findSafeCut(yPos + pageH_px * 0.65);
+              if (totalH - earlierCut >= minOrphan && earlierCut > yPos) {
+                cutY = earlierCut;
+              } else {
+                cutY = totalH;
+              }
             }
 
             const sliceH = cutY - yPos;
             if (sliceH <= 0) break;
 
+            const isLast = cutY >= totalH;
             const pageCanvas = document.createElement("canvas");
             pageCanvas.width = trimmed.width;
             pageCanvas.height = sliceH + gap_px * 2;
@@ -708,19 +723,18 @@
             pCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
             pCtx.drawImage(trimmed, 0, yPos, trimmed.width, sliceH, 0, gap_px, trimmed.width, sliceH);
 
-            const img = pageCanvas.toDataURL("image/jpeg", 0.95);
+            const img = pageCanvas.toDataURL("image/jpeg", 0.96);
             const sliceH_pt = (sliceH / trimmed.width) * a4W;
             const pageH_pt = sliceH_pt + gap_pt * 2;
 
             if (pageNum > 0) {
-              // Last page or short page: custom height so no blank space
-              if (cutY >= totalH || pageH_pt < a4H * 0.85) {
+              if (isLast || pageH_pt < a4H * 0.72) {
                 pdf.addPage([a4W, pageH_pt]);
               } else {
                 pdf.addPage("a4");
               }
             }
-            pdf.addImage(img, "JPEG", 0, 0, a4W, Math.min(pageH_pt, cutY >= totalH ? pageH_pt : a4H));
+            pdf.addImage(img, "JPEG", 0, 0, a4W, isLast ? pageH_pt : Math.min(pageH_pt, a4H));
 
             yPos = cutY;
             pageNum++;
