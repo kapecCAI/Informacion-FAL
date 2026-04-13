@@ -1,0 +1,152 @@
+name: Monitor FAL - Boletín Oficial
+ 
+on:
+  schedule:
+    # 13:00 UTC = 10:00 AM Argentina
+    - cron: '0 13 * * *'
+  workflow_dispatch: # permite correrlo manualmente
+ 
+jobs:
+  monitor-fal:
+    runs-on: ubuntu-latest
+ 
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+ 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+ 
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+ 
+      - name: Buscar novedades FAL en Boletín Oficial
+        id: buscar
+        run: |
+          python3 << 'EOF'
+          import requests
+          from bs4 import BeautifulSoup
+          import json
+          import os
+          from datetime import date
+ 
+          PHONE = "5491123782608"
+          APIKEY = "5819980"
+          HISTORIAL_FILE = "fal_historial.json"
+ 
+          # Cargar historial de lo ya notificado
+          try:
+              with open(HISTORIAL_FILE, "r") as f:
+                  historial = json.load(f)
+          except:
+              historial = []
+ 
+          TERMINOS = [
+              "fondo de asistencia laboral",
+              "fondos de asistencia laboral",
+              " FAL ",
+              "ley 27802",
+              "ley 27.802",
+          ]
+ 
+          def enviar_whatsapp(mensaje):
+              url = f"https://api.callmebot.com/whatsapp.php?phone={PHONE}&text={requests.utils.quote(mensaje)}&apikey={APIKEY}"
+              r = requests.get(url, timeout=15)
+              print(f"WhatsApp enviado: {r.status_code}")
+ 
+          def buscar_en_boletin():
+              resultados = []
+              urls = [
+                  "https://www.boletinoficial.gob.ar/busquedaAvanzada/realizarBusqueda",
+              ]
+ 
+              # Buscar en la sección de búsqueda del BO
+              headers = {
+                  "User-Agent": "Mozilla/5.0",
+                  "Content-Type": "application/json",
+              }
+ 
+              for termino in ["fondo de asistencia laboral", "FAL reglamentacion"]:
+                  try:
+                      payload = {
+                          "textoBusqueda": termino,
+                          "numeroPagina": 0
+                      }
+                      r = requests.post(
+                          "https://www.boletinoficial.gob.ar/busquedaAvanzada/realizarBusqueda",
+                          json=payload,
+                          headers=headers,
+                          timeout=20
+                      )
+                      if r.status_code == 200:
+                          data = r.json()
+                          items = data.get("avisos", []) or []
+                          for item in items[:5]:
+                              titulo = item.get("denominacion", "")
+                              fecha = item.get("fechaPublicacion", "")
+                              id_aviso = str(item.get("id", ""))
+                              if id_aviso and id_aviso not in historial:
+                                  resultados.append({
+                                      "id": id_aviso,
+                                      "titulo": titulo,
+                                      "fecha": fecha,
+                                      "termino": termino
+                                  })
+                  except Exception as e:
+                      print(f"Error buscando '{termino}': {e}")
+ 
+              # También buscar en la web principal del BO
+              try:
+                  r = requests.get(
+                      "https://www.boletinoficial.gob.ar/",
+                      headers={"User-Agent": "Mozilla/5.0"},
+                      timeout=15
+                  )
+                  soup = BeautifulSoup(r.text, "html.parser")
+                  texto = soup.get_text().lower()
+                  for termino in TERMINOS:
+                      if termino.lower() in texto:
+                          print(f"Término '{termino}' encontrado en portada del BO")
+              except Exception as e:
+                  print(f"Error en portada BO: {e}")
+ 
+              return resultados
+ 
+          novedades = buscar_en_boletin()
+ 
+          if novedades:
+              for nov in novedades:
+                  msg = (
+                      f"🦜 NOVEDAD FAL - Boletín Oficial\n"
+                      f"📅 Fecha: {nov['fecha']}\n"
+                      f"📄 {nov['titulo']}\n"
+                      f"🔗 Ver: https://www.boletinoficial.gob.ar"
+                  )
+                  enviar_whatsapp(msg)
+                  historial.append(nov["id"])
+                  print(f"Notificado: {nov['titulo']}")
+          else:
+              print(f"Sin novedades FAL al {date.today()}")
+              # Notificación de control semanal (solo los lunes)
+              if date.today().weekday() == 0:
+                  enviar_whatsapp(
+                      f"🦜 Monitor FAL activo ✅\n"
+                      f"Sin novedades en el Boletín Oficial al {date.today().strftime('%d/%m/%Y')}."
+                  )
+ 
+          # Guardar historial actualizado
+          with open(HISTORIAL_FILE, "w") as f:
+              json.dump(historial[-200:], f)  # guardar últimos 200
+ 
+          EOF
+ 
+      - name: Guardar historial actualizado
+        run: |
+          git config user.name "FAL Monitor Bot"
+          git config user.email "bot@fal-monitor.com"
+          git add fal_historial.json || true
+          git diff --staged --quiet || git commit -m "Update FAL historial [skip ci]"
+          git push || true
+          
