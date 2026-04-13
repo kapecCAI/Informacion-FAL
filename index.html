@@ -449,10 +449,6 @@
 
 </main>
 
-<section style="max-width:920px; margin:0 auto; padding:0 30px 60px;">
-
-</section>
-
 <footer>
   <div style="display:flex;align-items:flex-start;gap:40px;flex-wrap:wrap;justify-content:space-between;max-width:920px;margin:0 auto;padding:0 30px;">
     <div style="display:flex;align-items:center;gap:16px;flex-shrink:0;">
@@ -619,107 +615,98 @@
       loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
     ]).then(() => {
       setTimeout(() => {
-        // Renderizar al ancho del contenido principal (920px) para que llene el A4
-        const renderW = 960;
         html2canvas(document.body, {
-          scale: 2,
-          useCORS: true,
+          scale: 2, useCORS: true,
           scrollY: 0, scrollX: 0,
           backgroundColor: "#f2f8fa",
-          logging: false,
-          width: renderW,
-          windowWidth: renderW
+          logging: false, width: 960, windowWidth: 960
         }).then(canvas => {
           const { jsPDF } = window.jspdf;
           const ctx = canvas.getContext("2d");
+          // cream background color
           const bgR = 242, bgG = 248, bgB = 250;
 
-          // 1. Recortar espacio en blanco al final
+          // 1. Find last row with any non-cream pixel (includes dark navy footer)
           let lastRow = canvas.height - 1;
           for (let y = canvas.height - 1; y >= 0; y--) {
             const row = ctx.getImageData(0, y, canvas.width, 1).data;
             let hasContent = false;
-            for (let x = 0; x < canvas.width * 4; x += 16) {
-              if (Math.abs(row[x]-bgR)>15||Math.abs(row[x+1]-bgG)>15||Math.abs(row[x+2]-bgB)>15) {
+            for (let x = 0; x < canvas.width * 4; x += 12) {
+              if (Math.abs(row[x]-bgR)>8 || Math.abs(row[x+1]-bgG)>8 || Math.abs(row[x+2]-bgB)>8) {
                 hasContent = true; break;
               }
             }
-            if (hasContent) { lastRow = Math.min(y + 60, canvas.height); break; }
+            if (hasContent) { lastRow = Math.min(y + 20, canvas.height); break; }
           }
 
+          // 2. Trimmed canvas
           const trimmed = document.createElement("canvas");
           trimmed.width = canvas.width;
           trimmed.height = lastRow;
           trimmed.getContext("2d").drawImage(canvas, 0, 0);
           const tCtx = trimmed.getContext("2d");
 
-          // 2. Dimensiones A4
+          // 3. A4 page setup
           const a4W = 595.28, a4H = 841.89;
-          const scale = trimmed.width / a4W;
-          const gap_pt = 18;                          // espacio blanco entre páginas (pt)
-          const gap_px = Math.round(gap_pt * scale);   // en px del canvas
-          const pageH_px = Math.floor((a4H - gap_pt * 2) * scale); // altura útil por página
+          const sc = trimmed.width / a4W;
+          const gap_pt = 12;
+          const gap_px = Math.round(gap_pt * sc);
+          const pageH_px = Math.floor((a4H - gap_pt * 2) * sc);
           const totalH = trimmed.height;
 
-          // 3. Corte inteligente: busca fila vacía cerca del límite
+          // 4. Smart cut - find empty cream row near ideal cut point
+          // Also avoid cutting inside the navy footer (dark rows)
+          function isEmptyRow(y) {
+            if (y < 0 || y >= totalH) return false;
+            const row = tCtx.getImageData(0, y, trimmed.width, 1).data;
+            for (let x = 0; x < Math.min(trimmed.width, 500); x += 10) {
+              const i = x * 4;
+              if (Math.abs(row[i]-bgR)>10||Math.abs(row[i+1]-bgG)>10||Math.abs(row[i+2]-bgB)>10) return false;
+            }
+            return true;
+          }
+
           function findSafeCut(idealY) {
             if (idealY >= totalH) return totalH;
-            const range = 140;
-            const startY = Math.max(0, idealY - range);
-            const h = Math.min(range * 2, totalH - startY);
-            const pixels = tCtx.getImageData(0, startY, trimmed.width, h);
-            const data = pixels.data;
-            // Busca hacia arriba desde el punto ideal
-            for (let dy = 0; dy < range; dy++) {
-              for (const dir of [-1, 1]) {
-                const row = (range + dy * dir);
-                if (row < 0 || row >= h) continue;
-                let empty = true;
-                for (let x = 0; x < Math.min(trimmed.width, 400); x += 10) {
-                  const i = (row * trimmed.width + x) * 4;
-                  if (Math.abs(data[i]-bgR)>12||Math.abs(data[i+1]-bgG)>12||Math.abs(data[i+2]-bgB)>12) {
-                    empty = false; break;
-                  }
-                }
-                if (empty) return startY + row;
-              }
+            // Search ±180px around idealY
+            for (let dy = 0; dy < 180; dy++) {
+              if (isEmptyRow(idealY - dy)) return idealY - dy;
+              if (isEmptyRow(idealY + dy)) return idealY + dy;
             }
             return idealY;
           }
 
-          // 4. Generar páginas con margen superior/inferior
+          // 5. Build PDF pages
           const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
           let yPos = 0, pageNum = 0;
 
           while (yPos < totalH) {
-            const cutY = findSafeCut(yPos + pageH_px);
+            const rawCut = yPos + pageH_px;
+            const cutY = Math.min(findSafeCut(rawCut), totalH);
             const sliceH = cutY - yPos;
             if (sliceH <= 0) break;
 
-            // Canvas de la página con márgenes arriba y abajo
             const pageCanvas = document.createElement("canvas");
             pageCanvas.width = trimmed.width;
             pageCanvas.height = sliceH + gap_px * 2;
             const pCtx = pageCanvas.getContext("2d");
-
-            // Fondo blanco cremoso
             pCtx.fillStyle = "#f2f8fa";
             pCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-
-            // Contenido centrado con margen
             pCtx.drawImage(trimmed, 0, yPos, trimmed.width, sliceH, 0, gap_px, trimmed.width, sliceH);
 
-            const img = pageCanvas.toDataURL("image/jpeg", 0.94);
-            const pageH_pt = (pageCanvas.height / trimmed.width) * a4W;
+            const img = pageCanvas.toDataURL("image/jpeg", 0.95);
+            const sliceH_pt = (sliceH / trimmed.width) * a4W;
 
             if (pageNum > 0) pdf.addPage("a4");
-            pdf.addImage(img, "JPEG", 0, 0, a4W, Math.min(pageH_pt, a4H));
+            // Fit slice height precisely, don't force A4 height so no blank space at bottom of last page
+            const renderedH = Math.min((pageCanvas.height / trimmed.width) * a4W, a4H);
+            pdf.addImage(img, "JPEG", 0, 0, a4W, renderedH);
 
             yPos = cutY;
             pageNum++;
           }
 
-          pdf.save("Fondo_FAL_Guia_Completa.pdf");
+          pdf.save("Fondos_FAL_-_Parakeet_Fondos.pdf");
           toolbar.style.display = "flex";
           btn.style.opacity = "1";
           btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar PDF';
